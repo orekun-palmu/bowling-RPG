@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gift Bowling Quest</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        :root {
+            --bg: #111318;
+            --surface: #1c1f28;
+            --surface2: #252834;
+            --border: #2e3244;
+            --accent: #7c6aff;
+            --accent2: #a78bfa;
+            --gold: #ffd700;
+            --green: #00e676;
+            --red: #ff4d6d;
+            --text: #e8eaf0;
+            --muted: #8890a8;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px;
+            min-height: 100vh;
+        }
+        .container {
+            display: flex;
+            gap: 16px;
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+        .game-panel {
+            flex: 1;
+            background: var(--surface);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .side-panel {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        h2 {
+            margin: 0 0 10px;
+            font-size: 13px;
+            color: var(--accent2);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+        }
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+        }
+        .stage-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        #stage-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--gold);
+            letter-spacing: 0.05em;
+        }
+        #boss-hp-display {
+            font-size: 13px;
+            color: var(--red);
+            font-weight: bold;
+            visibility: hidden;
+        }
+        .control-pad {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        button {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            padding: 10px 8px;
+            color: var(--text);
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+        }
+        button:hover { background: var(--border); }
+        button:active { transform: scale(0.96); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-launch {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-color: var(--accent);
+            color: #fff;
+            font-size: 14px;
+        }
+        .btn-launch:hover { filter: brightness(1.15); }
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+        .status-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .status-val {
+            display: block;
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--green);
+            line-height: 1.2;
+        }
+        .gold-display {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        #current-gold {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--gold);
+            font-variant-numeric: tabular-nums;
+        }
+        .gold-unit { color: var(--gold); font-size: 16px; }
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            gap: 8px;
+        }
+        .shop-item-name { font-size: 12px; line-height: 1.4; }
+        .shop-item-name small { color: var(--muted); }
+        .shop-btn {
+            flex-shrink: 0;
+            padding: 6px 10px;
+            font-size: 12px;
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            border-radius: 6px;
+            min-width: 64px;
+        }
+        .shop-btn:hover:not(:disabled) { background: var(--accent2); }
+        .gift-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+        }
+        .gift-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--gold);
+            padding: 9px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .gift-btn:hover { border-color: var(--gold); }
+
+        /* Setup overlay */
+        #setup-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+        .setup-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 36px 30px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .setup-box h1 { color: var(--gold); margin: 0 0 12px; font-size: 26px; }
+        .setup-box p { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+        .setup-box input {
+            width: 80%; padding: 12px; margin-bottom: 16px;
+            font-size: 22px; border-radius: 8px;
+            border: 2px solid var(--border);
+            background: var(--bg); color: var(--gold);
+            text-align: center; font-weight: bold;
+            outline: none;
+        }
+        .setup-box input:focus { border-color: var(--accent); }
+        .start-btn {
+            width: 80%; padding: 14px;
+            font-size: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border: none; color: #fff; border-radius: 10px;
+            font-weight: bold; cursor: pointer;
+            transition: filter 0.2s, transform 0.1s;
+        }
+        .start-btn:hover { filter: brightness(1.15); }
+        .start-btn:active { transform: scale(0.97); }
+
+        /* Clear overlay */
+        #clear-overlay {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: none; justify-content: center; align-items: center;
+            border-radius: 8px;
+            z-index: 10;
+            flex-direction: column;
+            gap: 8px;
+        }
+        #clear-overlay.show { display: flex; }
+        #clear-text {
+            font-size: 32px; font-weight: bold;
+            color: var(--gold);
+            text-shadow: 0 0 20px var(--gold);
+            animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #clear-sub { font-size: 14px; color: var(--muted); }
+        @keyframes pop {
+            from { transform: scale(0.4); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+
+        .canvas-wrap { position: relative; }
+
+        @media (max-width: 700px) {
+            .container { flex-direction: column; }
+            .side-panel { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="setup-overlay">
+    <div class="setup-box">
+        <h1>🎳 ボウリングRPG</h1>
+        <p>本日の配信の「目標総ギフト額」を入力してください。<br>アイテムの価格が自動で逆算されます。</p>
+        <input type="number" id="target-gift" value="10000" min="100">
+        <br>
+        <button class="start-btn" onclick="startGame()">ゲーム開始！</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="game-panel">
+        <div class="stage-bar">
+            <span id="stage-display">STAGE 1-1</span>
+            <span id="boss-hp-display">BOSS HP: ---</span>
+        </div>
+        <div class="canvas-wrap">
+            <canvas id="gameCanvas" width="480" height="540"></canvas>
+            <div id="clear-overlay">
+                <div id="clear-text">STAGE CLEAR! 🎉</div>
+                <div id="clear-sub">次のステージへ…</div>
+            </div>
+        </div>
+        <div class="control-pad">
+            <button onmousedown="moveLeft()" onmouseup="stopMove()" onmouseleave="stopMove()"
+                    ontouchstart="moveLeft()" ontouchend="stopMove()">◀ 左</button>
+            <button class="btn-launch" onclick="pressLaunch()">投球 (Space)</button>
+            <button onmousedown="moveRight()" onmouseup="stopMove()" onmouseleave="stopMove()"
+                    ontouchstart="moveRight()" ontouchend="stopMove()">右 ▶</button>
+        </div>
+    </div>
+
+    <div class="side-panel">
+        <div class="card">
+            <h2>💎 所持金（ギフト総額）</h2>
+            <div class="gold-display">
+                <span id="current-gold">0</span>
+                <span class="gold-unit">G</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💪 ステータス</h2>
+            <div class="status-grid">
+                <div class="status-card">パワー<span id="stat-power" class="status-val">1</span></div>
+                <div class="status-card">操作性<span id="stat-control" class="status-val">1</span></div>
+                <div class="status-card">サイズ<span id="stat-size" class="status-val">1</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🛒 ショップ</h2>
+            <div id="shop-container"></div>
+        </div>
+
+        <div class="card">
+            <h2>➕ ギフト加算</h2>
+            <div class="gift-btns">
+                <button class="gift-btn" onclick="addGold(10)">+10 G</button>
+                <button class="gift-btn" onclick="addGold(100)">+100 G</button>
+                <button class="gift-btn" onclick="addGold(500)">+500 G</button>
+                <button class="gift-btn" onclick="addGold(1000)">+1,000 G</button>
+                <button class="gift-btn" onclick="addGold(5000)">+5,000 G</button>
+                <button class="gift-btn" onclick="addGold(10000)">+10,000 G</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const LANE_L = 55, LANE_R = 425;
+
+let game = {
+    started: false,
+    gold: 0,
+    stage: 1, subStage: 1, maxLevel: 10,
+    stats: { power: 1, control: 1, size: 1 },
+    basePrices: { power: 0, control: 0, size: 0 },
+    ball: { x: W/2, y: H - 60, vx: 0, vy: 0, radius: 12, state: 'aim' },
+    playerX: W/2,
+    playerSpeed: 4,
+    moveDir: 0,
+    launchPower: 0,
+    powerDir: 1,
+    pins: [],
+    obstacles: [],
+    bossMaxHp: 0,
+    bossHp: 0,
+    isBossStage: false,
+    particles: [],
+    clearTimer: 0,
+    isClearing: false,
+    frameCount: 0
+};
+
+const itemNames = { power: "鉄のボール", control: "制御グローブ", size: "巨大化オイル" };
+const itemIcons = { power: "⚫", control: "🧤", size: "🔵" };
+
+function startGame() {
+    const targetGift = parseInt(document.getElementById('target-gift').value) || 10000;
+    let totalScale = 0;
+    for (let lv = 1; lv < game.maxLevel; lv++) totalScale += Math.pow(lv, 1.5);
+    const baseUnit = (targetGift / 3) / totalScale;
+    game.basePrices.power   = baseUnit;
+    game.basePrices.control = baseUnit * 0.9;
+    game.basePrices.size    = baseUnit * 1.1;
+    document.getElementById('setup-overlay').style.display = 'none';
+    game.started = true;
+    initStage();
+    requestAnimationFrame(loop);
+}
+
+function initStage() {
+    game.isBossStage = (game.subStage === 10);
+    game.pins = [];
+    game.obstacles = [];
+    game.particles = [];
+    game.isClearing = false;
+    document.getElementById('clear-overlay').classList.remove('show');
+    resetBall();
+
+    if (game.isBossStage) {
+        game.bossMaxHp = game.stage * 3;
+        game.bossHp = game.bossMaxHp;
+        document.getElementById('boss-hp-display').style.visibility = 'visible';
+        updateBossHP();
+        game.pins.push({ x: W/2, y: 80, isBoss: true, radius: 26, hit: false, vy: 0, alpha: 1 });
+    } else {
+        document.getElementById('boss-hp-display').style.visibility = 'hidden';
+        // ピンを三角形状に整列（クリアしやすい配置）
+        const rows = Math.min(3, 2 + Math.floor(game.subStage / 4));
+        let pid = 0;
+        for (let r = 0; r < rows; r++) {
+            const count = r + 1;
+            for (let c = 0; c < count; c++) {
+                const px = W/2 + (c - (count-1)/2) * 38;
+                const py = 80 + r * 38;
+                game.pins.push({ x: px, y: py, isBoss: false, radius: 11, hit: false, vy: 0, vx: 0, alpha: 1 });
+            }
+        }
+        // 障害物（ステージ進行で増加、少なめに調整）
+        const obsCount = Math.max(0, Math.floor((game.stage + game.subStage) / 4) - 1);
+        for (let i = 0; i < obsCount; i++) {
+            game.obstacles.push({
+                x: LANE_L + 20 + Math.random() * (LANE_R - LANE_L - 60),
+                y: 200 + Math.random() * 160,
+                w: 35 + Math.random() * 30, h: 12,
+                vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + game.stage * 0.2)
+            });
+        }
+    }
+
+    const tag = game.isBossStage ? " 【BOSS】" : "";
+    document.getElementById('stage-display').innerText = `STAGE ${game.stage}-${game.subStage}${tag}`;
+    updateUI();
+}
+
+function resetBall() {
+    game.ball.state = 'aim';
+    game.ball.x = game.playerX;
+    game.ball.y = H - 60;
+    game.ball.vx = 0; game.ball.vy = 0;
+    game.ball.radius = 12 + (game.stats.size - 1) * 2.5;
+    game.launchPower = 0;
+    game.powerDir = 1;
+    game.lockedDirection = 50;
+}
+
+function addGold(amount) { game.gold += amount; updateUI(); }
+
+function getPrice(type) {
+    const lv = game.stats[type];
+    if (lv >= game.maxLevel) return Infinity;
+    return Math.floor(game.basePrices[type] * Math.pow(lv, 1.5));
+}
+
+function buyItem(type) {
+    const price = getPrice(type);
+    if (game.gold >= price && game.stats[type] < game.maxLevel) {
+        game.gold -= price;
+        game.stats[type]++;
+        if (game.ball.state === 'aim') game.ball.radius = 12 + (game.stats.size - 1) * 2.5;
+        spawnParticles(game.ball.x, game.ball.y, '#a78bfa', 10);
+        updateUI();
+    }
+}
+
+function updateBossHP() {
+    const filled = '█'.repeat(game.bossHp);
+    const empty  = '░'.repeat(Math.max(0, game.bossMaxHp - game.bossHp));
+    document.getElementById('boss-hp-display').innerText = `BOSS HP: ${filled}${empty}`;
+}
+
+function updateUI() {
+    document.getElementById('current-gold').innerText = game.gold.toLocaleString();
+    document.getElementById('stat-power').innerText   = game.stats.power;
+    document.getElementById('stat-control').innerText = game.stats.control;
+    document.getElementById('stat-size').innerText    = game.stats.size;
+    const shop = document.getElementById('shop-container');
+    shop.innerHTML = '';
+    ['power','control','size'].forEach(type => {
+        const price = getPrice(type);
+        const isMax = price === Infinity;
+        const priceText = isMax ? 'MAX' : `${price.toLocaleString()} G`;
+        const canBuy = !isMax && game.gold >= price;
+        const div = document.createElement('div');
+        div.className = 'shop-item';
+        div.innerHTML = `
+            <span class="shop-item-name">${itemIcons[type]} ${itemNames[type]}<br>
+            <small>Lv.${game.stats[type]}${isMax ? ' (MAX)' : ''}</small></span>
+            <button class="shop-btn" onclick="buyItem('${type}')" ${canBuy ? '' : 'disabled'}>${priceText}</button>
+        `;
+        shop.appendChild(div);
+    });
+}
+
+// Controls
+function moveLeft()  { game.moveDir = -1; }
+function moveRight() { game.moveDir =  1; }
+function stopMove()  { game.moveDir =  0; }
+function pressLaunch() {
+    if (!game.started || game.isClearing) return;
+    if (game.ball.state === 'aim') {
+        // Step1: 方向ゲージ開始
+        game.ball.state = 'dir_gauge';
+        game.launchPower = 50; // 中央からスタート
+        game.powerDir = 1;
+    } else if (game.ball.state === 'dir_gauge') {
+        // Step2: 方向確定、パワーゲージ開始
+        game.lockedDirection = game.launchPower;
+        game.ball.state = 'pow_gauge';
+        game.launchPower = 0;
+        game.powerDir = 1;
+    } else if (game.ball.state === 'pow_gauge') {
+        // Step3: パワー確定→発射
+        const deviation = (game.lockedDirection - 50) / 50; // -1~+1
+        const controlFactor = Math.max(0.05, 1.0 - (game.stats.control - 1) * 0.09);
+        const speed = 4.5 + (game.launchPower / 100) * (3.0 + game.stats.power * 0.7);
+        game.ball.vx = deviation * 4.0 * controlFactor;
+        game.ball.vy = -speed;
+        game.ball.state = 'roll';
+    }
+}
+
+window.addEventListener('keydown', e => {
+    if (!game.started) return;
+    if (e.key === 'ArrowLeft')  moveLeft();
+    if (e.key === 'ArrowRight') moveRight();
+    if (e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); pressLaunch(); }
+});
+window.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') stopMove();
+});
+
+// Particles
+function spawnParticles(x, y, color, count = 16) {
+    for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+        const speed = 2 + Math.random() * 4;
+        game.particles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            alpha: 1,
+            radius: 3 + Math.random() * 3,
+            color
+        });
+    }
+}
+
+function updateParticles() {
+    game.particles = game.particles.filter(p => p.alpha > 0.02);
+    game.particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        p.vy += 0.12;
+        p.alpha -= 0.03;
+        p.vx *= 0.96;
+    });
+}
+
+function drawParticles() {
+    game.particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        ctx.restore();
+    });
+}
+
+// Stars for clear
+let stars = [];
+function spawnStars() {
+    for (let i = 0; i < 30; i++) {
+        stars.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            vx: (Math.random() - 0.5) * 3,
+            vy: -2 - Math.random() * 4,
+            alpha: 1,
+            size: 4 + Math.random() * 8,
+            color: ['#ffd700','#ff9a3c','#a78bfa','#00e676'][Math.floor(Math.random()*4)]
+        });
+    }
+}
+
+// Main loop
+let lastTime = 0;
+function loop(ts) {
+    if (!game.started) return;
+    const dt = Math.min((ts - lastTime) / 16.67, 3);
+    lastTime = ts;
+    game.frameCount++;
+    update(dt);
+    requestAnimationFrame(loop);
+}
+
+function update(dt) {
+    ctx.clearRect(0, 0, W, H);
+    drawLane();
+    updateParticles();
+
+    if (game.isClearing) {
+        // Stars floating
+        stars = stars.filter(s => s.alpha > 0.02);
+        stars.forEach(s => {
+            s.x += s.vx; s.y += s.vy; s.alpha -= 0.015;
+            ctx.save();
+            ctx.globalAlpha = s.alpha;
+            ctx.font = `${s.size}px sans-serif`;
+            ctx.fillStyle = s.color;
+            ctx.fillText('★', s.x, s.y);
+            ctx.restore();
+        });
+        drawParticles();
+        drawBall();
+        game.clearTimer--;
+        if (game.clearTimer <= 0) advanceStage();
+        return;
+    }
+
+    // Ball logic
+    if (game.ball.state === 'aim') {
+        game.playerX += game.moveDir * game.playerSpeed;
+        game.playerX = Math.max(LANE_L + game.ball.radius + 2, Math.min(LANE_R - game.ball.radius - 2, game.playerX));
+        game.ball.x = game.playerX;
+        game.ball.y = H - 60;
+        // Aim arrow
+        drawAimArrow();
+    }
+
+    if (game.ball.state === 'dir_gauge') {
+        // 方向ゲージ：コントロールが高いほど遅く・中央寄りに
+        const dirSpeed = Math.max(0.8, 3.5 - game.stats.control * 0.28);
+        game.launchPower += game.powerDir * dirSpeed;
+        if (game.launchPower >= 100) { game.launchPower = 100; game.powerDir = -1; }
+        if (game.launchPower <= 0)   { game.launchPower = 0;   game.powerDir = 1;  }
+        drawDirectionGauge();
+    }
+
+    if (game.ball.state === 'pow_gauge') {
+        // パワーゲージ：0→100を往復
+        const powSpeed = Math.max(1.0, 4.0 - game.stats.power * 0.1);
+        game.launchPower += game.powerDir * powSpeed;
+        if (game.launchPower >= 100) { game.launchPower = 100; game.powerDir = -1; }
+        if (game.launchPower <= 0)   { game.launchPower = 0;   game.powerDir = 1;  }
+        // 確定した方向の矢印も表示し続ける
+        drawLockedDirectionArrow();
+        drawPowerGauge();
+    }
+
+    if (game.ball.state === 'roll') {
+        game.ball.x += game.ball.vx;
+        game.ball.y += game.ball.vy;
+
+        // Lane walls bounce
+        if (game.ball.x - game.ball.radius < LANE_L) {
+            game.ball.x = LANE_L + game.ball.radius;
+            game.ball.vx = Math.abs(game.ball.vx) * 0.6;
+        }
+        if (game.ball.x + game.ball.radius > LANE_R) {
+            game.ball.x = LANE_R - game.ball.radius;
+            game.ball.vx = -Math.abs(game.ball.vx) * 0.6;
+        }
+
+        // Gutter text (faint)
+        if (game.ball.x < LANE_L + 10 || game.ball.x > LANE_R - 10) {
+            ctx.save();
+            ctx.font = 'bold 18px Arial';
+            ctx.fillStyle = 'rgba(255,80,80,0.8)';
+            ctx.textAlign = 'center';
+            ctx.fillText('GUTTER!', W/2, H/2 - 20);
+            ctx.restore();
+        }
+    }
+
+    // Obstacles
+    game.obstacles.forEach(obs => {
+        obs.x += obs.vx;
+        if (obs.x < LANE_L + 2 || obs.x + obs.w > LANE_R - 2) obs.vx *= -1;
+        drawObstacle(obs);
+        if (game.ball.state === 'roll') {
+            if (game.ball.x + game.ball.radius > obs.x &&
+                game.ball.x - game.ball.radius < obs.x + obs.w &&
+                game.ball.y + game.ball.radius > obs.y &&
+                game.ball.y - game.ball.radius < obs.y + obs.h) {
+                game.ball.vx *= -1.2;
+                game.ball.vy *= 0.85;
+                spawnParticles(game.ball.x, obs.y, '#ff4d6d', 6);
+            }
+        }
+    });
+
+    // Pins
+    let allCleared = true;
+    game.pins.forEach(pin => {
+        if (pin.alpha < 1) {
+            pin.x += pin.vx || 0;
+            pin.y += pin.vy || 0;
+            pin.vy = (pin.vy || 0) + 0.4;
+            pin.alpha = Math.max(0, pin.alpha - 0.04);
+        }
+        if (!pin.hit || pin.alpha > 0) drawPin(pin);
+        if (!pin.hit) {
+            allCleared = false;
+            if (game.ball.state === 'roll') {
+                const dist = Math.hypot(game.ball.x - pin.x, game.ball.y - pin.y);
+                if (dist < game.ball.radius + pin.radius) {
+                    if (pin.isBoss) {
+                        game.bossHp -= game.stats.power;
+                        spawnParticles(pin.x, pin.y, '#d500f9', 12);
+                        if (game.bossHp <= 0) { pin.hit = true; flyPin(pin); }
+                        updateBossHP();
+                        resetBall();
+                    } else {
+                        pin.hit = true;
+                        flyPin(pin);
+                        spawnParticles(pin.x, pin.y, '#ffd700', 14);
+                        // ball slightly deflects
+                        const dx = game.ball.x - pin.x;
+                        game.ball.vx += dx * 0.1;
+                    }
+                }
+            }
+        }
+    });
+
+    drawParticles();
+    drawBall();
+
+    // Clear check
+    if (allCleared && !game.isClearing) {
+        game.isClearing = true;
+        game.clearTimer = 120;
+        spawnStars();
+        document.getElementById('clear-overlay').classList.add('show');
+        // flash the canvas border
+        canvas.style.borderColor = '#ffd700';
+        setTimeout(() => { canvas.style.borderColor = 'var(--border)'; }, 800);
+    }
+
+    // Miss (ball past top)
+    if (game.ball.y + game.ball.radius < 0) {
+        resetBall();
+    }
+}
+
+function flyPin(pin) {
+    pin.vx = (Math.random() - 0.5) * 6;
+    pin.vy = -4 - Math.random() * 4;
+    pin.alpha = 0.99; // trigger animation
+}
+
+function advanceStage() {
+    document.getElementById('clear-overlay').classList.remove('show');
+    stars = [];
+    game.subStage++;
+    if (game.subStage > 10) { game.subStage = 1; game.stage++; }
+    if (game.stage > 10) {
+        alert('🎉 おめでとうございます！全100ステージ完全制覇！！');
+        location.reload();
+    }
+    initStage();
+}
+
+// Draw helpers
+function drawLane() {
+    // Background gutter areas
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, W, H);
+    // Lane
+    const grad = ctx.createLinearGradient(LANE_L, 0, LANE_R, 0);
+    grad.addColorStop(0, '#2c2c3a');
+    grad.addColorStop(0.5, '#323244');
+    grad.addColorStop(1, '#2c2c3a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(LANE_L, 0, LANE_R - LANE_L, H);
+    // Lane edge lines
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(LANE_L, 0); ctx.lineTo(LANE_L, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(LANE_R, 0); ctx.lineTo(LANE_R, H); ctx.stroke();
+    // Foul line
+    ctx.strokeStyle = 'rgba(255,100,100,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(LANE_L, H - 100); ctx.lineTo(LANE_R, H - 100); ctx.stroke();
+    ctx.setLineDash([]);
+    // Arrow markers
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    for (let i = 0; i < 5; i++) {
+        const mx = LANE_L + (LANE_R - LANE_L) / 5 * (i + 0.5);
+        ctx.beginPath(); ctx.moveTo(mx, H - 90); ctx.lineTo(mx - 5, H - 76); ctx.lineTo(mx + 5, H - 76); ctx.closePath(); ctx.fill();
+    }
+}
+
+function drawBall() {
+    const b = game.ball;
+    const grad = ctx.createRadialGradient(b.x - b.radius*0.3, b.y - b.radius*0.3, b.radius*0.1, b.x, b.y, b.radius);
+    grad.addColorStop(0, '#80ffb0');
+    grad.addColorStop(1, '#00b050');
+    ctx.save();
+    ctx.shadowColor = '#00e676';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
+    // Shine
+    ctx.beginPath();
+    ctx.arc(b.x - b.radius*0.3, b.y - b.radius*0.3, b.radius * 0.25, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fill();
+}
+
+function drawPin(pin) {
+    ctx.save();
+    ctx.globalAlpha = pin.alpha;
+    if (pin.isBoss) {
+        const g = ctx.createRadialGradient(pin.x, pin.y, 2, pin.x, pin.y, pin.radius);
+        g.addColorStop(0, '#e040fb');
+        g.addColorStop(1, '#7b1fa2');
+        ctx.shadowColor = '#d500f9';
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(pin.x, pin.y, pin.radius, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        // HP ratio ring
+        const hpRatio = game.bossHp / game.bossMaxHp;
+        ctx.beginPath();
+        ctx.arc(pin.x, pin.y, pin.radius + 5, -Math.PI/2, -Math.PI/2 + Math.PI*2*hpRatio);
+        ctx.strokeStyle = '#ff4d6d';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.font = 'bold 11px Arial';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('BOSS', pin.x, pin.y);
+    } else {
+        const g = ctx.createRadialGradient(pin.x - 3, pin.y - 3, 1, pin.x, pin.y, pin.radius);
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(1, '#ccccee');
+        ctx.shadowColor = 'rgba(200,200,255,0.5)';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(pin.x, pin.y, pin.radius, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.strokeStyle = '#aaa';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function drawObstacle(obs) {
+    ctx.save();
+    ctx.shadowColor = '#ff1744';
+    ctx.shadowBlur = 8;
+    const g = ctx.createLinearGradient(obs.x, obs.y, obs.x, obs.y + obs.h);
+    g.addColorStop(0, '#ff4d6d');
+    g.addColorStop(1, '#c62828');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 4);
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawAimArrow() {
+    const b = game.ball;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,230,118,0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y - b.radius);
+    ctx.lineTo(b.x, b.y - b.radius - 40);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(0,230,118,0.6)';
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y - b.radius - 48);
+    ctx.lineTo(b.x - 5, b.y - b.radius - 36);
+    ctx.lineTo(b.x + 5, b.y - b.radius - 36);
+    ctx.closePath();
+    ctx.fill();
+    // ヒント
+    ctx.font = '11px Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'center';
+    ctx.fillText('SPACE → 方向決定', b.x, b.y + b.radius + 16);
+    ctx.restore();
+}
+
+function drawDirectionGauge() {
+    const b = game.ball;
+    const gw = 140, gh = 14;
+    const gx = W/2 - gw/2, gy = b.y + 22;
+    const ratio = game.launchPower / 100; // 0~1 (0.5=center)
+
+    // Track
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.beginPath(); ctx.roundRect(gx, gy, gw, gh, 7); ctx.fill();
+
+    // Left zone (red)
+    ctx.fillStyle = 'rgba(255,77,109,0.5)';
+    ctx.beginPath(); ctx.roundRect(gx, gy, gw * 0.5, gh, [7, 0, 0, 7]); ctx.fill();
+    // Right zone (red)
+    ctx.fillStyle = 'rgba(255,77,109,0.5)';
+    ctx.beginPath(); ctx.roundRect(gx + gw * 0.5, gy, gw * 0.5, gh, [0, 7, 7, 0]); ctx.fill();
+    // Center sweet-spot (green)
+    const sweetW = Math.max(20, 40 - (10 - game.stats.control) * 2);
+    ctx.fillStyle = 'rgba(0,230,118,0.45)';
+    ctx.beginPath(); ctx.roundRect(gx + gw/2 - sweetW/2, gy, sweetW, gh, 0); ctx.fill();
+
+    // Center line
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(gx + gw/2, gy); ctx.lineTo(gx + gw/2, gy + gh); ctx.stroke();
+
+    // Cursor
+    const cx = gx + gw * ratio;
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = '#fff';
+    ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.roundRect(cx - 3, gy - 3, 6, gh + 6, 3); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // ← ● →  矢印プレビュー（角度）
+    const deviation = (ratio - 0.5) * 2; // -1~+1
+    const angle = Math.PI * 1.5 + deviation * 0.5; // 上向き±約30度
+    const ax = b.x, ay = b.y - b.radius - 10;
+    const len = 50;
+    ctx.strokeStyle = `rgba(${ratio < 0.4 ? '80,160,255' : ratio > 0.6 ? '255,120,80' : '0,230,118'},0.85)`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(ax + Math.cos(angle) * len, ay + Math.sin(angle) * len);
+    ctx.stroke();
+    // arrowhead
+    const tip = { x: ax + Math.cos(angle) * len, y: ay + Math.sin(angle) * len };
+    ctx.beginPath();
+    ctx.moveTo(tip.x, tip.y);
+    ctx.lineTo(tip.x + Math.cos(angle + 2.6) * 10, tip.y + Math.sin(angle + 2.6) * 10);
+    ctx.lineTo(tip.x + Math.cos(angle - 2.6) * 10, tip.y + Math.sin(angle - 2.6) * 10);
+    ctx.closePath();
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fill();
+
+    // Label
+    ctx.font = 'bold 11px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText('① 方向  SPACE で決定', W/2, gy - 5);
+    ctx.restore();
+}
+
+function drawLockedDirectionArrow() {
+    const b = game.ball;
+    const ratio = game.lockedDirection / 100;
+    const deviation = (ratio - 0.5) * 2;
+    const angle = Math.PI * 1.5 + deviation * 0.5;
+    const ax = b.x, ay = b.y - b.radius - 10;
+    const len = 55;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,230,118,0.6)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(ax + Math.cos(angle) * len, ay + Math.sin(angle) * len);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+}
+
+function drawPowerGauge() {
+    const b = game.ball;
+    const gw = 140, gh = 14;
+    const gx = W/2 - gw/2, gy = b.y + 22;
+    const ratio = game.launchPower / 100;
+
+    ctx.save();
+    // Track
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.beginPath(); ctx.roundRect(gx, gy, gw, gh, 7); ctx.fill();
+
+    // Fill color: blue→green→red by power
+    const fillColor = ratio < 0.35 ? '#4fc3f7' : ratio < 0.7 ? '#00e676' : '#ff4d6d';
+    ctx.fillStyle = fillColor;
+    ctx.beginPath(); ctx.roundRect(gx, gy, gw * ratio, gh, 7); ctx.fill();
+
+    // Cursor
+    const cx = gx + gw * ratio;
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = '#fff';
+    ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.roundRect(cx - 3, gy - 3, 6, gh + 6, 3); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.font = 'bold 11px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText('② パワー  SPACE で発射！', W/2, gy - 5);
+    ctx.restore();
+}
+
+</script>
+</body>
+</html>
