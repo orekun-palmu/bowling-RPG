@@ -473,7 +473,7 @@ function initStage() {
         updateBossHP();
         game.pins.push({
             x: W/2, y: 80, isBoss: true, radius: 30, hit: false, vy: 0, alpha: 1,
-            def: def + 1, hpMax: game.bossMaxHp, hp: game.bossHp
+            def: def + 1, hpMax: game.bossMaxHp, hp: game.bossHp, hitCooldown: 0
         });
     } else {
         document.getElementById('boss-hp-wrap').style.visibility = 'hidden';
@@ -485,7 +485,7 @@ function initStage() {
                 const py = 80 + r * 38;
                 game.pins.push({
                     x: px, y: py, isBoss: false, radius: 11, hit: false, vy: 0, vx: 0, alpha: 1,
-                    hp: hp, hpMax: hp, def: def
+                    hp: hp, hpMax: hp, def: def, hitCooldown: 0
                 });
             }
         }
@@ -892,9 +892,10 @@ function update(dt) {
             pin.alpha = Math.max(0, pin.alpha - 0.04);
         }
         if (!pin.hit || pin.alpha > 0) drawPin(pin);
+        if (pin.hitCooldown > 0) pin.hitCooldown--;
         if (!pin.hit) {
             allCleared = false;
-            if (game.ball.state === 'roll') {
+            if (game.ball.state === 'roll' && (pin.hitCooldown || 0) <= 0) {
                 const dist = Math.hypot(game.ball.x - pin.x, game.ball.y - pin.y);
                 if (dist < game.ball.radius + pin.radius) {
                     // ダメージ計算
@@ -905,6 +906,7 @@ function update(dt) {
                     if (dmg <= 0) dmg = 0.25; // 防御で完全無効化されないよう最低ダメージ
 
                     pin.hp -= dmg;
+                    pin.hitCooldown = 30; // 同じピンへの連続ヒットを防ぐ
 
                     spawnFloatText(pin.x, pin.y - pin.radius - 5,
                         isCrit ? `会心! -${dmg.toFixed(1)}` : `-${dmg.toFixed(1)}`,
@@ -922,10 +924,10 @@ function update(dt) {
                             flyPin(pin);
                         }
                     }
+                    // ボールはわずかに減速・偏向するが止まらず進み続ける
                     const dx = game.ball.x - pin.x;
-                    game.ball.vx += dx * 0.08;
-                    if (!pin.isBoss || pin.hit) resetBall();
-                    else resetBall();
+                    game.ball.vx += dx * 0.04;
+                    game.ball.vy *= 0.94;
                 }
             }
         }
@@ -945,9 +947,11 @@ function update(dt) {
         setTimeout(() => { canvas.style.borderColor = 'var(--border)'; }, 800);
     }
 
-    // Miss (ball past top)
-    if (game.ball.y + game.ball.radius < 0) {
-        resetBall();
+    // ボールが画面上端を超えたらリセット（ピンクリア演出中は除く）
+    if (!game.isClearing && (game.ball.state === 'roll' || game.ball.state === 'gutter')) {
+        if (game.ball.y + game.ball.radius < 0 || game.ball.y - game.ball.radius > H + 10) {
+            resetBall();
+        }
     }
 
     ctx.restore();
