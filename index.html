@@ -7,21 +7,23 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         :root {
-            --bg: #111318;
-            --surface: #1c1f28;
-            --surface2: #252834;
-            --border: #2e3244;
-            --accent: #7c6aff;
-            --accent2: #a78bfa;
-            --gold: #ffd700;
+            --bg: #0d0e16;
+            --surface: #1b1e2b;
+            --surface2: #262a3c;
+            --surface3: #323750;
+            --border: #383d58;
+            --accent: #8b5cf6;
+            --accent2: #c084fc;
+            --gold: #ffd84d;
             --green: #00e676;
             --red: #ff4d6d;
-            --text: #e8eaf0;
-            --muted: #8890a8;
+            --blue: #4fc3f7;
+            --text: #f0f1f8;
+            --muted: #8b91ad;
         }
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: var(--bg);
+            background: radial-gradient(circle at 50% 0%, #1f2238 0%, var(--bg) 60%);
             color: var(--text);
             margin: 0;
             padding: 16px;
@@ -30,15 +32,16 @@
         .container {
             display: flex;
             gap: 16px;
-            max-width: 1080px;
+            max-width: 1140px;
             margin: 0 auto;
         }
         .game-panel {
             flex: 1;
-            background: var(--surface);
+            background: linear-gradient(165deg, var(--surface), #15172222);
             padding: 14px;
-            border-radius: 12px;
+            border-radius: 16px;
             border: 1px solid var(--border);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
         }
         .side-panel {
             width: 300px;
@@ -47,43 +50,61 @@
             gap: 12px;
         }
         .card {
-            background: var(--surface);
+            background: linear-gradient(165deg, var(--surface), #1a1d2c);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
         }
         h2 {
             margin: 0 0 10px;
-            font-size: 13px;
+            font-size: 12px;
             color: var(--accent2);
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
             border-bottom: 1px solid var(--border);
             padding-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         #gameCanvas {
             display: block;
             margin: 0 auto;
-            border-radius: 8px;
+            border-radius: 10px;
             border: 2px solid var(--border);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
         }
         .stage-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
+            padding: 0 4px;
         }
         #stage-display {
             font-size: 18px;
             font-weight: bold;
             color: var(--gold);
             letter-spacing: 0.05em;
+            text-shadow: 0 0 12px rgba(255,216,77,0.4);
         }
-        #boss-hp-display {
-            font-size: 13px;
-            color: var(--red);
-            font-weight: bold;
+        #boss-hp-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             visibility: hidden;
+        }
+        #boss-hp-label {
+            font-size: 11px; color: var(--red); font-weight: bold;
+        }
+        #boss-hp-bar-track {
+            width: 110px; height: 10px; background: #2a0a14;
+            border-radius: 6px; overflow: hidden; border: 1px solid #4d1320;
+        }
+        #boss-hp-bar-fill {
+            height: 100%; background: linear-gradient(90deg, #ff4d6d, #ff8a9b);
+            width: 100%; transition: width 0.25s ease;
         }
         .control-pad {
             display: grid;
@@ -94,46 +115,57 @@
         button {
             background: var(--surface2);
             border: 1px solid var(--border);
-            padding: 10px 8px;
+            padding: 11px 8px;
             color: var(--text);
             font-weight: bold;
             font-size: 13px;
             cursor: pointer;
-            border-radius: 8px;
+            border-radius: 10px;
             transition: background 0.15s, border-color 0.15s, transform 0.1s;
         }
-        button:hover { background: var(--border); }
+        button:hover { background: var(--surface3); border-color: var(--accent); }
         button:active { transform: scale(0.96); }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        button:disabled { opacity: 0.35; cursor: not-allowed; }
         .btn-launch {
             background: linear-gradient(135deg, var(--accent), var(--accent2));
             border-color: var(--accent);
             color: #fff;
             font-size: 14px;
+            box-shadow: 0 4px 14px rgba(139,92,246,0.35);
         }
         .btn-launch:hover { filter: brightness(1.15); }
         .status-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
             margin-bottom: 2px;
         }
         .status-card {
-            background: var(--bg);
+            background: linear-gradient(160deg, var(--surface2), var(--bg));
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 8px 4px;
+            border-radius: 10px;
+            padding: 9px 4px;
             text-align: center;
             font-size: 11px;
             color: var(--muted);
+            position: relative;
+            overflow: hidden;
         }
+        .status-card::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(139,92,246,0.18), transparent 70%);
+        }
+        .status-icon { font-size: 15px; display: block; margin-bottom: 2px; }
         .status-val {
             display: block;
-            font-size: 22px;
+            font-size: 21px;
             font-weight: bold;
             color: var(--green);
             line-height: 1.2;
+            position: relative;
         }
+        .status-card.crit .status-val { color: var(--gold); }
         .gold-display {
             display: flex;
             align-items: baseline;
@@ -144,71 +176,77 @@
             font-weight: bold;
             color: var(--gold);
             font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 14px rgba(255,216,77,0.35);
         }
         .gold-unit { color: var(--gold); font-size: 16px; }
         .shop-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--bg);
+            background: linear-gradient(160deg, var(--surface2), var(--bg));
             border: 1px solid var(--border);
             padding: 8px 10px;
-            border-radius: 8px;
+            border-radius: 10px;
             margin-bottom: 6px;
             gap: 8px;
+            transition: border-color 0.15s;
         }
+        .shop-item:hover { border-color: var(--accent); }
         .shop-item-name { font-size: 12px; line-height: 1.4; }
         .shop-item-name small { color: var(--muted); }
         .shop-btn {
             flex-shrink: 0;
             padding: 6px 10px;
             font-size: 12px;
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             border-color: var(--accent);
             color: #fff;
-            border-radius: 6px;
+            border-radius: 8px;
             min-width: 64px;
         }
-        .shop-btn:hover:not(:disabled) { background: var(--accent2); }
+        .shop-btn:hover:not(:disabled) { filter: brightness(1.15); }
         .gift-btns {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 6px;
         }
         .gift-btn {
-            background: var(--bg);
+            background: linear-gradient(160deg, var(--surface2), var(--bg));
             border: 1px solid var(--border);
             color: var(--gold);
             padding: 9px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 12px;
             font-weight: bold;
         }
-        .gift-btn:hover { border-color: var(--gold); }
+        .gift-btn:hover { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,216,77,0.25); }
 
         /* Setup overlay */
         #setup-overlay {
             position: fixed; inset: 0;
-            background: rgba(0,0,0,0.88);
+            background: rgba(8,9,16,0.92);
             display: flex; justify-content: center; align-items: center;
             z-index: 100;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(6px);
         }
         .setup-box {
-            background: var(--surface);
+            background: linear-gradient(165deg, var(--surface), #15172a);
             border: 1px solid var(--border);
             padding: 36px 30px;
-            border-radius: 16px;
+            border-radius: 18px;
             text-align: center;
             max-width: 380px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(139,92,246,0.15);
         }
-        .setup-box h1 { color: var(--gold); margin: 0 0 12px; font-size: 26px; }
+        .setup-box h1 {
+            color: var(--gold); margin: 0 0 12px; font-size: 26px;
+            text-shadow: 0 0 16px rgba(255,216,77,0.4);
+        }
         .setup-box p { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
         .setup-box input {
             width: 80%; padding: 12px; margin-bottom: 16px;
-            font-size: 22px; border-radius: 8px;
+            font-size: 22px; border-radius: 10px;
             border: 2px solid var(--border);
             background: var(--bg); color: var(--gold);
             text-align: center; font-weight: bold;
@@ -219,9 +257,10 @@
             width: 80%; padding: 14px;
             font-size: 16px;
             background: linear-gradient(135deg, var(--accent), var(--accent2));
-            border: none; color: #fff; border-radius: 10px;
+            border: none; color: #fff; border-radius: 12px;
             font-weight: bold; cursor: pointer;
             transition: filter 0.2s, transform 0.1s;
+            box-shadow: 0 6px 20px rgba(139,92,246,0.35);
         }
         .start-btn:hover { filter: brightness(1.15); }
         .start-btn:active { transform: scale(0.97); }
@@ -229,9 +268,9 @@
         /* Clear overlay */
         #clear-overlay {
             position: absolute; inset: 0;
-            background: rgba(0,0,0,0.75);
+            background: rgba(0,0,0,0.78);
             display: none; justify-content: center; align-items: center;
-            border-radius: 8px;
+            border-radius: 10px;
             z-index: 10;
             flex-direction: column;
             gap: 8px;
@@ -250,6 +289,22 @@
         }
 
         .canvas-wrap { position: relative; }
+
+        /* Debuff banner */
+        #debuff-banner {
+            position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+            background: rgba(255,77,109,0.92);
+            color: #fff; font-weight: bold; font-size: 13px;
+            padding: 6px 16px; border-radius: 20px;
+            box-shadow: 0 4px 14px rgba(255,77,109,0.5);
+            display: none; z-index: 5;
+            animation: slideDown 0.3s ease;
+        }
+        #debuff-banner.show { display: block; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translate(-50%, -16px); }
+            to   { opacity: 1; transform: translate(-50%, 0); }
+        }
 
         @media (max-width: 700px) {
             .container { flex-direction: column; }
@@ -273,10 +328,14 @@
     <div class="game-panel">
         <div class="stage-bar">
             <span id="stage-display">STAGE 1-1</span>
-            <span id="boss-hp-display">BOSS HP: ---</span>
+            <div id="boss-hp-wrap">
+                <span id="boss-hp-label">BOSS HP</span>
+                <div id="boss-hp-bar-track"><div id="boss-hp-bar-fill"></div></div>
+            </div>
         </div>
         <div class="canvas-wrap">
             <canvas id="gameCanvas" width="480" height="540"></canvas>
+            <div id="debuff-banner"></div>
             <div id="clear-overlay">
                 <div id="clear-text">STAGE CLEAR! 🎉</div>
                 <div id="clear-sub">次のステージへ…</div>
@@ -303,9 +362,10 @@
         <div class="card">
             <h2>💪 ステータス</h2>
             <div class="status-grid">
-                <div class="status-card">パワー<span id="stat-power" class="status-val">1</span></div>
-                <div class="status-card">操作性<span id="stat-control" class="status-val">1</span></div>
-                <div class="status-card">サイズ<span id="stat-size" class="status-val">1</span></div>
+                <div class="status-card"><span class="status-icon">⚫</span>パワー<span id="stat-power" class="status-val">1</span></div>
+                <div class="status-card"><span class="status-icon">🧤</span>操作性<span id="stat-control" class="status-val">1</span></div>
+                <div class="status-card"><span class="status-icon">🔵</span>サイズ<span id="stat-size" class="status-val">1</span></div>
+                <div class="status-card crit"><span class="status-icon">💥</span>会心率<span id="stat-crit" class="status-val">5%</span></div>
             </div>
         </div>
 
@@ -337,15 +397,16 @@ const LANE_L = 55, LANE_R = 425;
 let game = {
     started: false,
     gold: 0,
-    stage: 1, subStage: 1, maxLevel: 10,
-    stats: { power: 1, control: 1, size: 1 },
-    basePrices: { power: 0, control: 0, size: 0 },
+    stage: 1, subStage: 1, maxLevel: 15,
+    stats: { power: 1, control: 1, size: 1, crit: 1 },
+    basePrices: { power: 0, control: 0, size: 0, crit: 0 },
     ball: { x: W/2, y: H - 60, vx: 0, vy: 0, radius: 12, state: 'aim' },
     playerX: W/2,
     playerSpeed: 4,
     moveDir: 0,
     launchPower: 0,
     powerDir: 1,
+    lockedDirection: 50,
     pins: [],
     obstacles: [],
     bossMaxHp: 0,
@@ -354,24 +415,41 @@ let game = {
     particles: [],
     clearTimer: 0,
     isClearing: false,
-    frameCount: 0
+    frameCount: 0,
+    shakeTime: 0,
+    shakeMag: 0,
+    debuffTimer: 0,
+    bossActionCooldown: 0
 };
 
-const itemNames = { power: "鉄のボール", control: "制御グローブ", size: "巨大化オイル" };
-const itemIcons = { power: "⚫", control: "🧤", size: "🔵" };
+const itemNames = { power: "鉄のボール", control: "制御グローブ", size: "巨大化オイル", crit: "会心のレンズ" };
+const itemIcons = { power: "⚫", control: "🧤", size: "🔵", crit: "💥" };
 
 function startGame() {
     const targetGift = parseInt(document.getElementById('target-gift').value) || 10000;
     let totalScale = 0;
     for (let lv = 1; lv < game.maxLevel; lv++) totalScale += Math.pow(lv, 1.5);
-    const baseUnit = (targetGift / 3) / totalScale;
+    const baseUnit = (targetGift / 4) / totalScale;
     game.basePrices.power   = baseUnit;
     game.basePrices.control = baseUnit * 0.9;
-    game.basePrices.size    = baseUnit * 1.1;
+    game.basePrices.size    = baseUnit * 1.0;
+    game.basePrices.crit    = baseUnit * 1.1;
     document.getElementById('setup-overlay').style.display = 'none';
     game.started = true;
     initStage();
     requestAnimationFrame(loop);
+}
+
+// ── ピンのHP/防御力 計算 ──
+// グローバルなステージ通し番号 (1-100) に応じて指数的に強化
+function globalStageNum() {
+    return (game.stage - 1) * 10 + game.subStage;
+}
+function pinStats() {
+    const n = globalStageNum();
+    const hp = Math.max(1, Math.round(1 + Math.pow(n, 1.35) * 0.35));
+    const def = Math.max(0, Math.floor((n - 1) / 3)); // 3ステージごとに防御+1
+    return { hp, def };
 }
 
 function initStage() {
@@ -380,36 +458,45 @@ function initStage() {
     game.obstacles = [];
     game.particles = [];
     game.isClearing = false;
+    game.debuffTimer = 0;
+    game.bossActionCooldown = 90;
     document.getElementById('clear-overlay').classList.remove('show');
+    document.getElementById('debuff-banner').classList.remove('show');
     resetBall();
 
+    const { hp, def } = pinStats();
+
     if (game.isBossStage) {
-        game.bossMaxHp = game.stage * 3;
+        game.bossMaxHp = Math.max(8, Math.round(hp * 6 + game.stage * 4));
         game.bossHp = game.bossMaxHp;
-        document.getElementById('boss-hp-display').style.visibility = 'visible';
+        document.getElementById('boss-hp-wrap').style.visibility = 'visible';
         updateBossHP();
-        game.pins.push({ x: W/2, y: 80, isBoss: true, radius: 26, hit: false, vy: 0, alpha: 1 });
+        game.pins.push({
+            x: W/2, y: 80, isBoss: true, radius: 30, hit: false, vy: 0, alpha: 1,
+            def: def + 1, hpMax: game.bossMaxHp, hp: game.bossHp
+        });
     } else {
-        document.getElementById('boss-hp-display').style.visibility = 'hidden';
-        // ピンを三角形状に整列（クリアしやすい配置）
-        const rows = Math.min(3, 2 + Math.floor(game.subStage / 4));
-        let pid = 0;
+        document.getElementById('boss-hp-wrap').style.visibility = 'hidden';
+        const rows = Math.min(4, 2 + Math.floor(game.subStage / 3));
         for (let r = 0; r < rows; r++) {
             const count = r + 1;
             for (let c = 0; c < count; c++) {
                 const px = W/2 + (c - (count-1)/2) * 38;
                 const py = 80 + r * 38;
-                game.pins.push({ x: px, y: py, isBoss: false, radius: 11, hit: false, vy: 0, vx: 0, alpha: 1 });
+                game.pins.push({
+                    x: px, y: py, isBoss: false, radius: 11, hit: false, vy: 0, vx: 0, alpha: 1,
+                    hp: hp, hpMax: hp, def: def
+                });
             }
         }
-        // 障害物（ステージ進行で増加、少なめに調整）
-        const obsCount = Math.max(0, Math.floor((game.stage + game.subStage) / 4) - 1);
+        // 障害物
+        const obsCount = Math.max(0, Math.floor((globalStageNum()) / 5) - 1);
         for (let i = 0; i < obsCount; i++) {
             game.obstacles.push({
                 x: LANE_L + 20 + Math.random() * (LANE_R - LANE_L - 60),
                 y: 200 + Math.random() * 160,
                 w: 35 + Math.random() * 30, h: 12,
-                vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + game.stage * 0.2)
+                vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + game.stage * 0.15)
             });
         }
     }
@@ -424,7 +511,7 @@ function resetBall() {
     game.ball.x = game.playerX;
     game.ball.y = H - 60;
     game.ball.vx = 0; game.ball.vy = 0;
-    game.ball.radius = 12 + (game.stats.size - 1) * 2.5;
+    game.ball.radius = 12 + (game.stats.size - 1) * 2.2;
     game.launchPower = 0;
     game.powerDir = 1;
     game.lockedDirection = 50;
@@ -438,21 +525,24 @@ function getPrice(type) {
     return Math.floor(game.basePrices[type] * Math.pow(lv, 1.5));
 }
 
+function critPercent() {
+    return Math.min(50, 5 + (game.stats.crit - 1) * 3); // 5%スタート、+3%/lv
+}
+
 function buyItem(type) {
     const price = getPrice(type);
     if (game.gold >= price && game.stats[type] < game.maxLevel) {
         game.gold -= price;
         game.stats[type]++;
-        if (game.ball.state === 'aim') game.ball.radius = 12 + (game.stats.size - 1) * 2.5;
-        spawnParticles(game.ball.x, game.ball.y, '#a78bfa', 10);
+        if (game.ball.state === 'aim') game.ball.radius = 12 + (game.stats.size - 1) * 2.2;
+        spawnParticles(game.ball.x, game.ball.y, '#c084fc', 12);
         updateUI();
     }
 }
 
 function updateBossHP() {
-    const filled = '█'.repeat(game.bossHp);
-    const empty  = '░'.repeat(Math.max(0, game.bossMaxHp - game.bossHp));
-    document.getElementById('boss-hp-display').innerText = `BOSS HP: ${filled}${empty}`;
+    const ratio = Math.max(0, game.bossHp / game.bossMaxHp);
+    document.getElementById('boss-hp-bar-fill').style.width = `${ratio * 100}%`;
 }
 
 function updateUI() {
@@ -460,9 +550,10 @@ function updateUI() {
     document.getElementById('stat-power').innerText   = game.stats.power;
     document.getElementById('stat-control').innerText = game.stats.control;
     document.getElementById('stat-size').innerText    = game.stats.size;
+    document.getElementById('stat-crit').innerText    = `${critPercent()}%`;
     const shop = document.getElementById('shop-container');
     shop.innerHTML = '';
-    ['power','control','size'].forEach(type => {
+    ['power','control','size','crit'].forEach(type => {
         const price = getPrice(type);
         const isMax = price === Infinity;
         const priceText = isMax ? 'MAX' : `${price.toLocaleString()} G`;
@@ -485,21 +576,26 @@ function stopMove()  { game.moveDir =  0; }
 function pressLaunch() {
     if (!game.started || game.isClearing) return;
     if (game.ball.state === 'aim') {
-        // Step1: 方向ゲージ開始
         game.ball.state = 'dir_gauge';
-        game.launchPower = 50; // 中央からスタート
+        game.launchPower = 50;
         game.powerDir = 1;
     } else if (game.ball.state === 'dir_gauge') {
-        // Step2: 方向確定、パワーゲージ開始
         game.lockedDirection = game.launchPower;
         game.ball.state = 'pow_gauge';
         game.launchPower = 0;
         game.powerDir = 1;
     } else if (game.ball.state === 'pow_gauge') {
-        // Step3: パワー確定→発射
-        const deviation = (game.lockedDirection - 50) / 50; // -1~+1
-        const controlFactor = Math.max(0.05, 1.0 - (game.stats.control - 1) * 0.09);
-        const speed = 4.5 + (game.launchPower / 100) * (3.0 + game.stats.power * 0.7);
+        const deviation = (game.lockedDirection - 50) / 50; // -1 ~ +1
+        const controlFactor = Math.max(0.05, 1.0 - (game.stats.control - 1) * 0.07);
+        const speed = 4.5 + (game.launchPower / 100) * (3.0 + game.stats.power * 0.6);
+
+        // ガーター判定：方向ゲージが中央スイートゾーン外ならガーター行き
+        const effControl = effectiveStats().control;
+        const sweetH = Math.max(20, 56 - (effControl - 1) * 4);
+        const sweetRatioHalf = (sweetH / GAUGE_H) / 2;
+        const ratioFromCenter = Math.abs((game.lockedDirection / 100) - 0.5);
+        game.isGutterShot = ratioFromCenter > sweetRatioHalf;
+
         game.ball.vx = deviation * 4.0 * controlFactor;
         game.ball.vy = -speed;
         game.ball.state = 'roll';
@@ -554,6 +650,30 @@ function drawParticles() {
     });
 }
 
+// Floating text (damage numbers etc.)
+let floatTexts = [];
+function spawnFloatText(x, y, text, color, big) {
+    floatTexts.push({ x, y, text, color, alpha: 1, vy: -1.2, size: big ? 18 : 13 });
+}
+function updateFloatTexts() {
+    floatTexts = floatTexts.filter(t => t.alpha > 0.02);
+    floatTexts.forEach(t => { t.y += t.vy; t.alpha -= 0.025; });
+}
+function drawFloatTexts() {
+    floatTexts.forEach(t => {
+        ctx.save();
+        ctx.globalAlpha = t.alpha;
+        ctx.font = `bold ${t.size}px Arial`;
+        ctx.fillStyle = t.color;
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 3;
+        ctx.strokeText(t.text, t.x, t.y);
+        ctx.fillText(t.text, t.x, t.y);
+        ctx.restore();
+    });
+}
+
 // Stars for clear
 let stars = [];
 function spawnStars() {
@@ -565,9 +685,55 @@ function spawnStars() {
             vy: -2 - Math.random() * 4,
             alpha: 1,
             size: 4 + Math.random() * 8,
-            color: ['#ffd700','#ff9a3c','#a78bfa','#00e676'][Math.floor(Math.random()*4)]
+            color: ['#ffd84d','#ff9a3c','#c084fc','#00e676'][Math.floor(Math.random()*4)]
         });
     }
+}
+
+// ── デバフ表示 ──
+function showDebuff(text) {
+    const banner = document.getElementById('debuff-banner');
+    banner.textContent = text;
+    banner.classList.add('show');
+    clearTimeout(game._debuffBannerTimer);
+    game._debuffBannerTimer = setTimeout(() => banner.classList.remove('show'), 1800);
+}
+
+// ── ボスのデバフ攻撃 ──
+function bossAction(boss) {
+    const types = ['statdown', 'shake', 'obstacle'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    spawnParticles(boss.x, boss.y, '#d500f9', 18);
+
+    if (type === 'statdown') {
+        // ステータスを一時的に下げる（描画用のデバフ係数として保持）
+        game.debuffActive = true;
+        game.debuffTimer = 240; // 約4秒
+        showDebuff('👁 ボスの視線… ステータス低下！');
+    } else if (type === 'shake') {
+        game.shakeTime = 40;
+        game.shakeMag = 10;
+        showDebuff('💢 ボスの咆哮！ 画面が揺れる！');
+    } else if (type === 'obstacle') {
+        game.obstacles.push({
+            x: LANE_L + 20 + Math.random() * (LANE_R - LANE_L - 60),
+            y: 160 + Math.random() * 180,
+            w: 40 + Math.random() * 25, h: 12,
+            vx: (Math.random() > 0.5 ? 1 : -1) * (1.5 + game.stage * 0.2),
+            temp: true
+        });
+        showDebuff('⚠ ボスが障害物を呼び出した！');
+    }
+}
+
+function effectiveStats() {
+    const debuffMul = game.debuffActive ? 0.55 : 1;
+    return {
+        power: Math.max(1, game.stats.power * debuffMul),
+        control: Math.max(0.2, game.stats.control * debuffMul),
+        size: game.stats.size,
+        crit: game.stats.crit
+    };
 }
 
 // Main loop
@@ -582,12 +748,35 @@ function loop(ts) {
 }
 
 function update(dt) {
-    ctx.clearRect(0, 0, W, H);
+    // Screen shake
+    ctx.save();
+    if (game.shakeTime > 0) {
+        game.shakeTime--;
+        const m = game.shakeMag * (game.shakeTime / 40);
+        ctx.translate((Math.random()-0.5) * m, (Math.random()-0.5) * m);
+    }
+    ctx.clearRect(-30, -30, W+60, H+60);
     drawLane();
     updateParticles();
+    updateFloatTexts();
+
+    // Debuff timer
+    if (game.debuffTimer > 0) {
+        game.debuffTimer--;
+        if (game.debuffTimer <= 0) game.debuffActive = false;
+    }
+
+    // Boss periodic action
+    if (game.isBossStage && !game.isClearing) {
+        game.bossActionCooldown--;
+        if (game.bossActionCooldown <= 0) {
+            const boss = game.pins.find(p => p.isBoss && !p.hit);
+            if (boss) bossAction(boss);
+            game.bossActionCooldown = 150 + Math.floor(Math.random() * 90);
+        }
+    }
 
     if (game.isClearing) {
-        // Stars floating
         stars = stars.filter(s => s.alpha > 0.02);
         stars.forEach(s => {
             s.x += s.vx; s.y += s.vy; s.alpha -= 0.015;
@@ -599,11 +788,15 @@ function update(dt) {
             ctx.restore();
         });
         drawParticles();
+        drawFloatTexts();
         drawBall();
         game.clearTimer--;
         if (game.clearTimer <= 0) advanceStage();
+        ctx.restore();
         return;
     }
+
+    const eff = effectiveStats();
 
     // Ball logic
     if (game.ball.state === 'aim') {
@@ -611,26 +804,22 @@ function update(dt) {
         game.playerX = Math.max(LANE_L + game.ball.radius + 2, Math.min(LANE_R - game.ball.radius - 2, game.playerX));
         game.ball.x = game.playerX;
         game.ball.y = H - 60;
-        // Aim arrow
         drawAimArrow();
     }
 
     if (game.ball.state === 'dir_gauge') {
-        // 方向ゲージ：コントロールが高いほど遅く・中央寄りに
-        const dirSpeed = Math.max(0.8, 3.5 - game.stats.control * 0.28);
+        const dirSpeed = Math.max(0.8, 3.5 - eff.control * 0.28);
         game.launchPower += game.powerDir * dirSpeed;
         if (game.launchPower >= 100) { game.launchPower = 100; game.powerDir = -1; }
         if (game.launchPower <= 0)   { game.launchPower = 0;   game.powerDir = 1;  }
-        drawDirectionGauge();
+        drawDirectionGauge(eff);
     }
 
     if (game.ball.state === 'pow_gauge') {
-        // パワーゲージ：0→100を往復
-        const powSpeed = Math.max(1.0, 4.0 - game.stats.power * 0.1);
+        const powSpeed = Math.max(1.0, 4.0 - eff.power * 0.1);
         game.launchPower += game.powerDir * powSpeed;
         if (game.launchPower >= 100) { game.launchPower = 100; game.powerDir = -1; }
         if (game.launchPower <= 0)   { game.launchPower = 0;   game.powerDir = 1;  }
-        // 確定した方向の矢印も表示し続ける
         drawLockedDirectionArrow();
         drawPowerGauge();
     }
@@ -639,24 +828,40 @@ function update(dt) {
         game.ball.x += game.ball.vx;
         game.ball.y += game.ball.vy;
 
-        // Lane walls bounce
-        if (game.ball.x - game.ball.radius < LANE_L) {
-            game.ball.x = LANE_L + game.ball.radius;
-            game.ball.vx = Math.abs(game.ball.vx) * 0.6;
-        }
-        if (game.ball.x + game.ball.radius > LANE_R) {
-            game.ball.x = LANE_R - game.ball.radius;
-            game.ball.vx = -Math.abs(game.ball.vx) * 0.6;
+        if (game.isGutterShot) {
+            // ガーターへ向かって逸れていく（壁での反射なし）
+            game.ball.vx += (game.lockedDirection < 50 ? -0.18 : 0.18);
+        } else {
+            // レーン内に収める（軽い補正のみ、跳ね返らない）
+            if (game.ball.x - game.ball.radius < LANE_L) game.ball.x = LANE_L + game.ball.radius;
+            if (game.ball.x + game.ball.radius > LANE_R) game.ball.x = LANE_R - game.ball.radius;
         }
 
-        // Gutter text (faint)
-        if (game.ball.x < LANE_L + 10 || game.ball.x > LANE_R - 10) {
+        // ガーターに完全に落ちたらミス扱い
+        if (game.ball.x + game.ball.radius < LANE_L - 4 || game.ball.x - game.ball.radius > LANE_R + 4) {
             ctx.save();
-            ctx.font = 'bold 18px Arial';
-            ctx.fillStyle = 'rgba(255,80,80,0.8)';
+            ctx.font = 'bold 20px Arial';
+            ctx.fillStyle = 'rgba(255,80,80,0.85)';
             ctx.textAlign = 'center';
-            ctx.fillText('GUTTER!', W/2, H/2 - 20);
+            ctx.fillText('GUTTER...', W/2, H/2 - 20);
             ctx.restore();
+            game.ball.state = 'gutter';
+            game.ball.vy = Math.max(game.ball.vy, -2); // ゆっくり落ちる
+        }
+    }
+
+    if (game.ball.state === 'gutter') {
+        // ガーターに落ちたボールはそのまま画面外へ消えていく
+        game.ball.y += Math.abs(game.ball.vy) * 0.6 + 1;
+        game.ball.x += game.ball.vx * 0.3;
+        ctx.save();
+        ctx.font = 'bold 20px Arial';
+        ctx.fillStyle = 'rgba(255,80,80,0.7)';
+        ctx.textAlign = 'center';
+        ctx.fillText('GUTTER...', W/2, H/2 - 20);
+        ctx.restore();
+        if (game.ball.y > H + game.ball.radius) {
+            resetBall();
         }
     }
 
@@ -670,7 +875,7 @@ function update(dt) {
                 game.ball.x - game.ball.radius < obs.x + obs.w &&
                 game.ball.y + game.ball.radius > obs.y &&
                 game.ball.y - game.ball.radius < obs.y + obs.h) {
-                game.ball.vx *= -1.2;
+                game.ball.vx *= -1.15;
                 game.ball.vy *= 0.85;
                 spawnParticles(game.ball.x, obs.y, '#ff4d6d', 6);
             }
@@ -692,26 +897,42 @@ function update(dt) {
             if (game.ball.state === 'roll') {
                 const dist = Math.hypot(game.ball.x - pin.x, game.ball.y - pin.y);
                 if (dist < game.ball.radius + pin.radius) {
+                    // ダメージ計算
+                    const isCrit = Math.random() * 100 < critPercent();
+                    let dmg = eff.power;
+                    if (isCrit) dmg *= 32;
+                    dmg = Math.max(0, dmg - pin.def);
+                    if (dmg <= 0) dmg = 0.25; // 防御で完全無効化されないよう最低ダメージ
+
+                    pin.hp -= dmg;
+
+                    spawnFloatText(pin.x, pin.y - pin.radius - 5,
+                        isCrit ? `会心! -${dmg.toFixed(1)}` : `-${dmg.toFixed(1)}`,
+                        isCrit ? '#ffd84d' : '#fff', isCrit);
+
                     if (pin.isBoss) {
-                        game.bossHp -= game.stats.power;
+                        game.bossHp = pin.hp;
                         spawnParticles(pin.x, pin.y, '#d500f9', 12);
-                        if (game.bossHp <= 0) { pin.hit = true; flyPin(pin); }
+                        if (pin.hp <= 0) { pin.hit = true; flyPin(pin); }
                         updateBossHP();
-                        resetBall();
                     } else {
-                        pin.hit = true;
-                        flyPin(pin);
-                        spawnParticles(pin.x, pin.y, '#ffd700', 14);
-                        // ball slightly deflects
-                        const dx = game.ball.x - pin.x;
-                        game.ball.vx += dx * 0.1;
+                        spawnParticles(pin.x, pin.y, isCrit ? '#ffd84d' : '#fff', isCrit ? 20 : 10);
+                        if (pin.hp <= 0) {
+                            pin.hit = true;
+                            flyPin(pin);
+                        }
                     }
+                    const dx = game.ball.x - pin.x;
+                    game.ball.vx += dx * 0.08;
+                    if (!pin.isBoss || pin.hit) resetBall();
+                    else resetBall();
                 }
             }
         }
     });
 
     drawParticles();
+    drawFloatTexts();
     drawBall();
 
     // Clear check
@@ -720,8 +941,7 @@ function update(dt) {
         game.clearTimer = 120;
         spawnStars();
         document.getElementById('clear-overlay').classList.add('show');
-        // flash the canvas border
-        canvas.style.borderColor = '#ffd700';
+        canvas.style.borderColor = '#ffd84d';
         setTimeout(() => { canvas.style.borderColor = 'var(--border)'; }, 800);
     }
 
@@ -729,12 +949,14 @@ function update(dt) {
     if (game.ball.y + game.ball.radius < 0) {
         resetBall();
     }
+
+    ctx.restore();
 }
 
 function flyPin(pin) {
     pin.vx = (Math.random() - 0.5) * 6;
     pin.vy = -4 - Math.random() * 4;
-    pin.alpha = 0.99; // trigger animation
+    pin.alpha = 0.99;
 }
 
 function advanceStage() {
@@ -749,31 +971,40 @@ function advanceStage() {
     initStage();
 }
 
-// Draw helpers
+// ── Draw helpers ──
 function drawLane() {
-    // Background gutter areas
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = '#15161f';
     ctx.fillRect(0, 0, W, H);
-    // Lane
     const grad = ctx.createLinearGradient(LANE_L, 0, LANE_R, 0);
-    grad.addColorStop(0, '#2c2c3a');
-    grad.addColorStop(0.5, '#323244');
-    grad.addColorStop(1, '#2c2c3a');
+    grad.addColorStop(0, '#2a2c3f');
+    grad.addColorStop(0.5, '#33364e');
+    grad.addColorStop(1, '#2a2c3f');
     ctx.fillStyle = grad;
     ctx.fillRect(LANE_L, 0, LANE_R - LANE_L, H);
-    // Lane edge lines
-    ctx.strokeStyle = '#444';
+
+    // ガーター（光る縞模様）
+    const gutterGrad = ctx.createLinearGradient(0, 0, 0, H);
+    gutterGrad.addColorStop(0, 'rgba(79,195,247,0.10)');
+    gutterGrad.addColorStop(1, 'rgba(79,195,247,0.04)');
+    ctx.fillStyle = gutterGrad;
+    ctx.fillRect(LANE_L - 18, 0, 18, H);
+    ctx.fillRect(LANE_R, 0, 18, H);
+
+    ctx.strokeStyle = 'rgba(124,106,255,0.45)';
     ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(124,106,255,0.5)';
+    ctx.shadowBlur = 6;
     ctx.beginPath(); ctx.moveTo(LANE_L, 0); ctx.lineTo(LANE_L, H); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(LANE_R, 0); ctx.lineTo(LANE_R, H); ctx.stroke();
-    // Foul line
-    ctx.strokeStyle = 'rgba(255,100,100,0.4)';
+    ctx.shadowBlur = 0;
+
+    ctx.strokeStyle = 'rgba(255,100,100,0.35)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 4]);
     ctx.beginPath(); ctx.moveTo(LANE_L, H - 100); ctx.lineTo(LANE_R, H - 100); ctx.stroke();
     ctx.setLineDash([]);
-    // Arrow markers
-    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
     for (let i = 0; i < 5; i++) {
         const mx = LANE_L + (LANE_R - LANE_L) / 5 * (i + 0.5);
         ctx.beginPath(); ctx.moveTo(mx, H - 90); ctx.lineTo(mx - 5, H - 76); ctx.lineTo(mx + 5, H - 76); ctx.closePath(); ctx.fill();
@@ -783,20 +1014,19 @@ function drawLane() {
 function drawBall() {
     const b = game.ball;
     const grad = ctx.createRadialGradient(b.x - b.radius*0.3, b.y - b.radius*0.3, b.radius*0.1, b.x, b.y, b.radius);
-    grad.addColorStop(0, '#80ffb0');
+    grad.addColorStop(0, '#bfffd6');
     grad.addColorStop(1, '#00b050');
     ctx.save();
     ctx.shadowColor = '#00e676';
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 14;
     ctx.beginPath();
     ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
     ctx.fillStyle = grad;
     ctx.fill();
     ctx.restore();
-    // Shine
     ctx.beginPath();
     ctx.arc(b.x - b.radius*0.3, b.y - b.radius*0.3, b.radius * 0.25, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.fill();
 }
 
@@ -804,32 +1034,67 @@ function drawPin(pin) {
     ctx.save();
     ctx.globalAlpha = pin.alpha;
     if (pin.isBoss) {
-        const g = ctx.createRadialGradient(pin.x, pin.y, 2, pin.x, pin.y, pin.radius);
-        g.addColorStop(0, '#e040fb');
-        g.addColorStop(1, '#7b1fa2');
+        // 不気味なオーラ
+        const auraR = pin.radius + 16 + Math.sin(game.frameCount * 0.08) * 4;
+        const aura = ctx.createRadialGradient(pin.x, pin.y, pin.radius * 0.5, pin.x, pin.y, auraR);
+        aura.addColorStop(0, 'rgba(213,0,249,0.35)');
+        aura.addColorStop(1, 'rgba(213,0,249,0)');
+        ctx.fillStyle = aura;
+        ctx.beginPath(); ctx.arc(pin.x, pin.y, auraR, 0, Math.PI*2); ctx.fill();
+
+        // 本体
+        const g = ctx.createRadialGradient(pin.x - pin.radius*0.3, pin.y - pin.radius*0.3, 2, pin.x, pin.y, pin.radius);
+        g.addColorStop(0, '#f48fff');
+        g.addColorStop(0.6, '#b026ff');
+        g.addColorStop(1, '#5c0099');
         ctx.shadowColor = '#d500f9';
-        ctx.shadowBlur = 16;
+        ctx.shadowBlur = 20;
         ctx.beginPath();
         ctx.arc(pin.x, pin.y, pin.radius, 0, Math.PI * 2);
         ctx.fillStyle = g;
         ctx.fill();
-        // HP ratio ring
-        const hpRatio = game.bossHp / game.bossMaxHp;
+        ctx.shadowBlur = 0;
+
+        // 目
+        const eyeOffset = pin.radius * 0.38;
+        const blink = (Math.sin(game.frameCount * 0.05) > 0.9) ? 0.2 : 1;
+        ctx.fillStyle = '#fff';
+        [-1, 1].forEach(dir => {
+            ctx.beginPath();
+            ctx.ellipse(pin.x + dir*eyeOffset, pin.y - pin.radius*0.1, 6, 6*blink, 0, 0, Math.PI*2);
+            ctx.fill();
+        });
+        ctx.fillStyle = '#ff1744';
+        [-1, 1].forEach(dir => {
+            ctx.beginPath();
+            ctx.arc(pin.x + dir*eyeOffset, pin.y - pin.radius*0.1, 2.6*blink, 0, Math.PI*2);
+            ctx.fill();
+        });
+        // 角
+        ctx.fillStyle = '#2d0040';
         ctx.beginPath();
-        ctx.arc(pin.x, pin.y, pin.radius + 5, -Math.PI/2, -Math.PI/2 + Math.PI*2*hpRatio);
-        ctx.strokeStyle = '#ff4d6d';
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        ctx.moveTo(pin.x - pin.radius*0.7, pin.y - pin.radius*0.7);
+        ctx.lineTo(pin.x - pin.radius*0.3, pin.y - pin.radius*1.35);
+        ctx.lineTo(pin.x - pin.radius*0.05, pin.y - pin.radius*0.85);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(pin.x + pin.radius*0.7, pin.y - pin.radius*0.7);
+        ctx.lineTo(pin.x + pin.radius*0.3, pin.y - pin.radius*1.35);
+        ctx.lineTo(pin.x + pin.radius*0.05, pin.y - pin.radius*0.85);
+        ctx.closePath(); ctx.fill();
+
         ctx.font = 'bold 11px Arial';
         ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('BOSS', pin.x, pin.y);
+        ctx.fillText('BOSS', pin.x, pin.y + pin.radius * 0.65);
+        ctx.font = '9px Arial';
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.fillText(`DEF ${pin.def}`, pin.x, pin.y + pin.radius * 0.65 + 12);
     } else {
         const g = ctx.createRadialGradient(pin.x - 3, pin.y - 3, 1, pin.x, pin.y, pin.radius);
         g.addColorStop(0, '#ffffff');
-        g.addColorStop(1, '#ccccee');
-        ctx.shadowColor = 'rgba(200,200,255,0.5)';
+        g.addColorStop(1, '#d8d8ff');
+        ctx.shadowColor = 'rgba(200,200,255,0.6)';
         ctx.shadowBlur = 8;
         ctx.beginPath();
         ctx.arc(pin.x, pin.y, pin.radius, 0, Math.PI * 2);
@@ -838,17 +1103,41 @@ function drawPin(pin) {
         ctx.strokeStyle = '#aaa';
         ctx.lineWidth = 1;
         ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // HPバー（HPが1より大きい場合のみ表示）
+        if (pin.hpMax > 1) {
+            const bw = pin.radius * 2.2, bh = 3;
+            const bx = pin.x - bw/2, by = pin.y - pin.radius - 8;
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(bx, by, bw, bh);
+            const ratio = Math.max(0, pin.hp / pin.hpMax);
+            ctx.fillStyle = ratio > 0.5 ? '#00e676' : ratio > 0.2 ? '#ffd84d' : '#ff4d6d';
+            ctx.fillRect(bx, by, bw * ratio, bh);
+        }
+        // 防御アイコン
+        if (pin.def > 0) {
+            ctx.font = '9px Arial';
+            ctx.fillStyle = '#4fc3f7';
+            ctx.textAlign = 'center';
+            ctx.fillText(`🛡${pin.def}`, pin.x, pin.y + pin.radius + 9);
+        }
     }
     ctx.restore();
 }
 
 function drawObstacle(obs) {
     ctx.save();
-    ctx.shadowColor = '#ff1744';
+    ctx.shadowColor = obs.temp ? '#d500f9' : '#ff1744';
     ctx.shadowBlur = 8;
     const g = ctx.createLinearGradient(obs.x, obs.y, obs.x, obs.y + obs.h);
-    g.addColorStop(0, '#ff4d6d');
-    g.addColorStop(1, '#c62828');
+    if (obs.temp) {
+        g.addColorStop(0, '#e879f9');
+        g.addColorStop(1, '#9333ea');
+    } else {
+        g.addColorStop(0, '#ff4d6d');
+        g.addColorStop(1, '#c62828');
+    }
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 4);
@@ -874,7 +1163,6 @@ function drawAimArrow() {
     ctx.lineTo(b.x + 5, b.y - b.radius - 36);
     ctx.closePath();
     ctx.fill();
-    // ヒント
     ctx.font = '11px Arial';
     ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.textAlign = 'center';
@@ -882,54 +1170,56 @@ function drawAimArrow() {
     ctx.restore();
 }
 
-function drawDirectionGauge() {
-    const b = game.ball;
-    const gw = 140, gh = 14;
-    const gx = W/2 - gw/2, gy = b.y + 22;
-    const ratio = game.launchPower / 100; // 0~1 (0.5=center)
+// ── 左サイドに固定したゲージ ──
+const GAUGE_X = 14;
+const GAUGE_W = 18;
+const GAUGE_Y = 60;
+const GAUGE_H = H - 140;
 
-    // Track
+function drawDirectionGauge(eff) {
+    const ratio = game.launchPower / 100;
+
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.65)';
-    ctx.beginPath(); ctx.roundRect(gx, gy, gw, gh, 7); ctx.fill();
+    // Track
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath(); ctx.roundRect(GAUGE_X, GAUGE_Y, GAUGE_W, GAUGE_H, 8); ctx.fill();
 
-    // Left zone (red)
-    ctx.fillStyle = 'rgba(255,77,109,0.5)';
-    ctx.beginPath(); ctx.roundRect(gx, gy, gw * 0.5, gh, [7, 0, 0, 7]); ctx.fill();
-    // Right zone (red)
-    ctx.fillStyle = 'rgba(255,77,109,0.5)';
-    ctx.beginPath(); ctx.roundRect(gx + gw * 0.5, gy, gw * 0.5, gh, [0, 7, 7, 0]); ctx.fill();
-    // Center sweet-spot (green)
-    const sweetW = Math.max(20, 40 - (10 - game.stats.control) * 2);
-    ctx.fillStyle = 'rgba(0,230,118,0.45)';
-    ctx.beginPath(); ctx.roundRect(gx + gw/2 - sweetW/2, gy, sweetW, gh, 0); ctx.fill();
+    // 左右ゾーン（赤=暴走）
+    const half = GAUGE_H / 2;
+    ctx.fillStyle = 'rgba(255,77,109,0.45)';
+    ctx.beginPath(); ctx.roundRect(GAUGE_X, GAUGE_Y, GAUGE_W, half, [8,8,0,0]); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(GAUGE_X, GAUGE_Y+half, GAUGE_W, half, [0,0,8,8]); ctx.fill();
 
-    // Center line
+    // 中央スイートスポット（緑）
+    const sweetH = Math.max(20, 56 - (eff.control - 1) * 4);
+    ctx.fillStyle = 'rgba(0,230,118,0.5)';
+    ctx.beginPath(); ctx.roundRect(GAUGE_X, GAUGE_Y + GAUGE_H/2 - sweetH/2, GAUGE_W, sweetH, 0); ctx.fill();
+
+    // 中央線
     ctx.strokeStyle = 'rgba(255,255,255,0.25)';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(gx + gw/2, gy); ctx.lineTo(gx + gw/2, gy + gh); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(GAUGE_X, GAUGE_Y + GAUGE_H/2); ctx.lineTo(GAUGE_X+GAUGE_W, GAUGE_Y + GAUGE_H/2); ctx.stroke();
 
-    // Cursor
-    const cx = gx + gw * ratio;
+    // カーソル（ratio 0=上, 1=下 にマッピング: 0が左方向、1が右方向に対応するよう逆転）
+    const cy = GAUGE_Y + GAUGE_H * ratio;
     ctx.fillStyle = '#fff';
     ctx.shadowColor = '#fff';
     ctx.shadowBlur = 6;
-    ctx.beginPath(); ctx.roundRect(cx - 3, gy - 3, 6, gh + 6, 3); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(GAUGE_X - 3, cy - 3, GAUGE_W + 6, 6, 3); ctx.fill();
     ctx.shadowBlur = 0;
 
-    // ← ● →  矢印プレビュー（角度）
-    const deviation = (ratio - 0.5) * 2; // -1~+1
-    const angle = Math.PI * 1.5 + deviation * 0.5; // 上向き±約30度
+    // 方向プレビュー矢印（ボール上）
+    const b = game.ball;
+    const deviation = (ratio - 0.5) * 2;
+    const angle = Math.PI * 1.5 + deviation * 0.5;
     const ax = b.x, ay = b.y - b.radius - 10;
     const len = 50;
     ctx.strokeStyle = `rgba(${ratio < 0.4 ? '80,160,255' : ratio > 0.6 ? '255,120,80' : '0,230,118'},0.85)`;
     ctx.lineWidth = 2;
-    ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(ax, ay);
     ctx.lineTo(ax + Math.cos(angle) * len, ay + Math.sin(angle) * len);
     ctx.stroke();
-    // arrowhead
     const tip = { x: ax + Math.cos(angle) * len, y: ay + Math.sin(angle) * len };
     ctx.beginPath();
     ctx.moveTo(tip.x, tip.y);
@@ -939,11 +1229,17 @@ function drawDirectionGauge() {
     ctx.fillStyle = ctx.strokeStyle;
     ctx.fill();
 
-    // Label
+    // ラベル（縦書き風）
     ctx.font = 'bold 11px Arial';
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
-    ctx.fillText('① 方向  SPACE で決定', W/2, gy - 5);
+    ctx.save();
+    ctx.translate(GAUGE_X + GAUGE_W/2, GAUGE_Y - 10);
+    ctx.fillText('①方向', 0, 0);
+    ctx.restore();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '10px Arial';
+    ctx.fillText('SPACEで決定', GAUGE_X + GAUGE_W/2, GAUGE_Y + GAUGE_H + 16);
     ctx.restore();
 }
 
@@ -967,34 +1263,38 @@ function drawLockedDirectionArrow() {
 }
 
 function drawPowerGauge() {
-    const b = game.ball;
-    const gw = 140, gh = 14;
-    const gx = W/2 - gw/2, gy = b.y + 22;
     const ratio = game.launchPower / 100;
 
     ctx.save();
     // Track
-    ctx.fillStyle = 'rgba(0,0,0,0.65)';
-    ctx.beginPath(); ctx.roundRect(gx, gy, gw, gh, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath(); ctx.roundRect(GAUGE_X, GAUGE_Y, GAUGE_W, GAUGE_H, 8); ctx.fill();
 
-    // Fill color: blue→green→red by power
+    // Fill from bottom (パワーは下から上に積み上がるイメージ)
+    const fillH = GAUGE_H * ratio;
+    const fillY = GAUGE_Y + GAUGE_H - fillH;
     const fillColor = ratio < 0.35 ? '#4fc3f7' : ratio < 0.7 ? '#00e676' : '#ff4d6d';
     ctx.fillStyle = fillColor;
-    ctx.beginPath(); ctx.roundRect(gx, gy, gw * ratio, gh, 7); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(GAUGE_X, fillY, GAUGE_W, fillH, [ratio>0.95?8:0, ratio>0.95?8:0, 8, 8]); ctx.fill();
 
     // Cursor
-    const cx = gx + gw * ratio;
     ctx.fillStyle = '#fff';
     ctx.shadowColor = '#fff';
     ctx.shadowBlur = 6;
-    ctx.beginPath(); ctx.roundRect(cx - 3, gy - 3, 6, gh + 6, 3); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(GAUGE_X - 3, fillY - 3, GAUGE_W + 6, 6, 3); ctx.fill();
     ctx.shadowBlur = 0;
 
     // Label
     ctx.font = 'bold 11px Arial';
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
-    ctx.fillText('② パワー  SPACE で発射！', W/2, gy - 5);
+    ctx.save();
+    ctx.translate(GAUGE_X + GAUGE_W/2, GAUGE_Y - 10);
+    ctx.fillText('②パワー', 0, 0);
+    ctx.restore();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '10px Arial';
+    ctx.fillText('SPACEで発射！', GAUGE_X + GAUGE_W/2, GAUGE_Y + GAUGE_H + 16);
     ctx.restore();
 }
 
